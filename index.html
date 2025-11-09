@@ -336,7 +336,7 @@
 
     <script>
         // Configuration - Replace with your Google Apps Script Web App URL
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbysoBhB7fp7UIGEuU9m3jfpj8hNRPqqB-6ia_U7Sf2cvFNZfcSymdVHz9Y1cD_W24R2/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbybonsXsz5ArL8sr-WMs5ikIzpNLzmNvzsX9jJNaP2mpck1zZOrlcjZcckBbofDyeUV/exec';
 
         // Check if form was already submitted on page load
         window.addEventListener('DOMContentLoaded', function() {
@@ -416,31 +416,42 @@
             // Send data to Google Sheets
             fetch(SCRIPT_URL, {
                 method: 'POST',
-                mode: 'no-cors',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(data)
             })
-            .then(() => {
-                // Success - Mark as submitted in browser
-                localStorage.setItem('wf48FormSubmitted', 'true');
-                
+            .then(response => response.json())
+            .then(result => {
                 loader.classList.remove('active');
-                successMessage.style.display = 'block';
-                successMessage.innerHTML = '✓ Your information has been submitted successfully! This form is now locked.';
                 
-                // Hide the form completely
-                this.style.display = 'none';
-                
-                // Scroll to success message
-                successMessage.scrollIntoView({ behavior: 'smooth' });
+                if (result.result === 'duplicate') {
+                    // Duplicate entry detected
+                    alert('⚠️ ERROR: This Tower and Unit combination has already been submitted!\n\nTower: ' + data.tower + '\nUnit: ' + data.unitNumber + '\n\nIf you believe this is an error, please contact WF48 Management.');
+                    submitBtn.disabled = false;
+                } else if (result.result === 'success') {
+                    // Success - Mark as submitted in browser
+                    localStorage.setItem('wf48FormSubmitted', 'true');
+                    
+                    successMessage.style.display = 'block';
+                    successMessage.innerHTML = '✓ Your information has been submitted successfully! This form is now locked.';
+                    
+                    // Hide the form completely
+                    document.getElementById('allotteeForm').style.display = 'none';
+                    
+                    // Scroll to success message
+                    successMessage.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    // Other error
+                    alert('There was an error submitting your information. Please try again.');
+                    submitBtn.disabled = false;
+                }
             })
             .catch(error => {
-                // Error
+                // Network or fetch error
                 console.error('Error:', error);
                 loader.classList.remove('active');
-                alert('There was an error submitting your information. Please try again.');
+                alert('There was an error submitting your information. Please check your internet connection and try again.');
                 submitBtn.disabled = false;
             });
         });
