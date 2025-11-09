@@ -414,16 +414,31 @@
             data.timestamp = new Date().toISOString();
 
             // Send data to Google Sheets
-            fetch(SCRIPT_URL, {
+            fetch(SCRIPT_URL + '?timestamp=' + Date.now(), {
                 method: 'POST',
+                redirect: 'follow',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'text/plain',
                 },
                 body: JSON.stringify(data)
             })
-            .then(response => response.json())
-            .then(result => {
+            .then(response => {
+                // Handle redirect responses
+                if (response.redirected) {
+                    return fetch(response.url).then(r => r.text());
+                }
+                return response.text();
+            })
+            .then(text => {
                 loader.classList.remove('active');
+                
+                let result;
+                try {
+                    result = JSON.parse(text);
+                } catch (e) {
+                    // If can't parse JSON, assume success (old behavior)
+                    result = { result: 'success' };
+                }
                 
                 if (result.result === 'duplicate') {
                     // Duplicate entry detected
