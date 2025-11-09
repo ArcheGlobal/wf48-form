@@ -338,6 +338,16 @@
         // Configuration - Replace with your Google Apps Script Web App URL
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbysoBhB7fp7UIGEuU9m3jfpj8hNRPqqB-6ia_U7Sf2cvFNZfcSymdVHz9Y1cD_W24R2/exec';
 
+        // Check if form was already submitted on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            const submitted = localStorage.getItem('wf48FormSubmitted');
+            if (submitted === 'true') {
+                document.getElementById('allotteeForm').style.display = 'none';
+                document.getElementById('successMessage').style.display = 'block';
+                document.getElementById('successMessage').innerHTML = '✓ You have already submitted this form. Thank you!';
+            }
+        });
+
         // Show/hide owner sections based on number of owners
         document.getElementById('numOwners').addEventListener('change', function() {
             const numOwners = parseInt(this.value);
@@ -413,23 +423,18 @@
                 body: JSON.stringify(data)
             })
             .then(() => {
-                // Success
+                // Success - Mark as submitted in browser
+                localStorage.setItem('wf48FormSubmitted', 'true');
+                
                 loader.classList.remove('active');
                 successMessage.style.display = 'block';
-                this.reset();
+                successMessage.innerHTML = '✓ Your information has been submitted successfully! This form is now locked.';
                 
-                // Hide all owner sections
-                document.getElementById('owner1Section').classList.remove('active');
-                document.getElementById('owner2Section').classList.remove('active');
-                document.getElementById('owner3Section').classList.remove('active');
-
+                // Hide the form completely
+                this.style.display = 'none';
+                
                 // Scroll to success message
                 successMessage.scrollIntoView({ behavior: 'smooth' });
-
-                // Re-enable button after 2 seconds
-                setTimeout(() => {
-                    submitBtn.disabled = false;
-                }, 2000);
             })
             .catch(error => {
                 // Error
